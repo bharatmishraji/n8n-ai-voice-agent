@@ -1,0 +1,363 @@
+{
+  "name": "Call Handling & Appointment Scheduler",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "twilio-incoming",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "4c00a747-647f-41f4-9d54-5c56014e8fce",
+      "name": "Incoming Call Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -880,
+        0
+      ],
+      "webhookId": "669547be-7435-403e-ad5c-51ce5b7b423e"
+    },
+    {
+      "parameters": {
+        "functionCode": "return {\n  text: $json[\"Body\"] || $json[\"transcription\"] || \"\";\n};"
+      },
+      "id": "1ebf70af-3180-4b06-bfd8-b6e5e3e0ec54",
+      "name": "Clean Transcript",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "jsonParameters": true,
+        "options": {}
+      },
+      "id": "b5e8b573-7a83-4c4c-b056-9ed8f4eb1322",
+      "name": "Detect Intent (GPT-4)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        -300,
+        -40
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "4e64ff02-2317-46cb-8e7a-601bd5c41a32",
+      "name": "Switch Intent",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        -180,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "calendar": "primary",
+        "start": "={{ new Date().toISOString() }}",
+        "end": "={{ new Date(Date.now() + 30 * 60000).toISOString() }}",
+        "additionalFields": {}
+      },
+      "id": "01329122-7aa3-4aca-80d5-fdae4caa40b2",
+      "name": "Create Appointment",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1,
+      "position": [
+        180,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "Our working hours are 9 AM to 6 PM, Monday to Saturday."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3d90638a-eedd-4fc7-b736-8c8d593ed735",
+      "name": "FAQ Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        180,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "Transferring you to a human agent now."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e1a3bcf5-a8e7-4e4b-9e77-ce6f3c72ea55",
+      "name": "Escalate Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        180,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "c4751605-6c6d-4f13-a39f-00353c52ec8b",
+      "name": "Return TwiML",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        600,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Receives incoming POST requests from Twilio with caller speech converted to text. This is the voice entry point into the automation.",
+        "height": 320,
+        "width": 300,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -980,
+        -140
+      ],
+      "id": "0e7f9452-abaf-47bc-9f67-5b5627f72641",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n### Extracts the transcription text from the incoming webhook payload. Ensures we always pass a clean string to GPT.",
+        "height": 320,
+        "width": 300,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -660,
+        160
+      ],
+      "id": "358ffe48-eeab-46be-a9f4-68c00ccce594",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "### Uses OpenAI GPT-4 to classify caller's message into one of three intents: 'appointment', 'faq', or 'escalate",
+        "height": 320,
+        "width": 300,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        -180
+      ],
+      "id": "c78fc134-57db-4f7a-b742-a02df7b65a80",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n### Routes the call based on intent detected by GPT. Directs to appointment booking, FAQ reply, or escalation flow.",
+        "height": 320,
+        "width": 300
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -280,
+        180
+      ],
+      "id": "ea93f887-7811-4404-bce3-733d118d7470",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "### Creates a calendar event using Google Calendar for the caller. Currently hardcoded for a 30-minute block starting now.",
+        "height": 280,
+        "width": 300,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        80,
+        -220
+      ],
+      "id": "f3dedb59-0ee0-4bc7-a1f6-4520866556d1",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "### Provides a pre-written answer to common questions. Useful for handling working hours, services, or pricing.",
+        "height": 280,
+        "width": 300,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        80,
+        80
+      ],
+      "id": "0f19ec74-7d95-4ff6-bc46-48ca5d378ba4",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n### Triggers when GPT detects the user wants to speak to a human. Returns a polite escalation message.",
+        "height": 300,
+        "width": 340
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        80,
+        400
+      ],
+      "id": "05d0abab-a56e-4275-ac17-475844a0d973",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n### Converts the final response message into Twilio-compatible TwiML XML so Twilio can read it out loud to the caller.",
+        "height": 300,
+        "width": 340,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        520,
+        -40
+      ],
+      "id": "258a9032-4f90-413d-bf34-18af6ab1f904",
+      "name": "Sticky Note7"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Incoming Call Webhook": {
+      "main": [
+        [
+          {
+            "node": "Clean Transcript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Transcript": {
+      "main": [
+        [
+          {
+            "node": "Detect Intent (GPT-4)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Intent (GPT-4)": {
+      "main": [
+        [
+          {
+            "node": "Switch Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Intent": {
+      "main": [
+        [
+          {
+            "node": "Create Appointment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FAQ Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalate Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Appointment": {
+      "main": [
+        [
+          {
+            "node": "Return TwiML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FAQ Response": {
+      "main": [
+        [
+          {
+            "node": "Return TwiML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escalate Response": {
+      "main": [
+        [
+          {
+            "node": "Return TwiML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "12f4cb01-0c9e-4368-b70d-58ea073067b3",
+  "meta": {
+    "instanceId": "56c2e29f8561e9e2282ba8347dcd67835034199a91b278ee86c87fe67410fc2d"
+  },
+  "id": "qENcEqkItj0e1CFh",
+  "tags": []
+}
